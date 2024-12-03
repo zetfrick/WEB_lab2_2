@@ -2,95 +2,81 @@ package news
 
 import (
 	"github.com/gin-gonic/gin"
+	"news-service/models"
+	"news-service/service"
 	"strconv"
-	"sync"
 )
 
-// Структура новости
-type News struct {
-	ID      int    `json:"id"`
-	Title   string `json:"title"`
-	Author  string `json:"author"`
-	Content string `json:"content"`
+// Управление
+type NewsController struct {
+	service *service.NewsService
 }
 
-// Тут будут новости
-var newsList = make([]News, 0, 50)
-
-// ID новостей
-var idCounter = 1
-
-// Это надо, чтобы работало хорошо и не ломалось
-var mutex = &sync.Mutex{}
-
-// Получить новости
-func GetNews(c *gin.Context) {
-	c.JSON(200, newsList)
+// Создание NewsController
+func NewNewsController(service *service.NewsService) *NewsController {
+	return &NewsController{service: service}
 }
 
-// Создать новость
-func CreateNews(c *gin.Context) {
-	var newNews News
-	if err := c.ShouldBindJSON(&newNews); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()}) // Ошибка
+// Получение всех новостей.
+func (c *NewsController) GetNews(ctx *gin.Context) {
+	newsList := c.service.GetAll() 
+	ctx.JSON(200, newsList)
+}
+
+// Создание новой новости
+func (c *NewsController) CreateNews(ctx *gin.Context) {
+	var newNews models.News // Переменная для хранения новости
+	if err := ctx.ShouldBindJSON(&newNews); err != nil { 
+		ctx.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-
-	mutex.Lock()
-	newNews.ID = idCounter // Присваиваем ID
-	idCounter++ // Увеличиваем ID
-	newsList = append(newsList, newNews) // Добавляем новую новость
-	mutex.Unlock()
-
-	c.JSON(201, newNews)
+	if newNews.Title == "" || newNews.Author == "" || newNews.Content == "" { // Проверка заполнености
+		ctx.JSON(400, gin.H{"error": "Title, Author, and Content are required"})
+		return
+	}
+	createdNews := c.service.Create(newNews)
+	ctx.JSON(201, createdNews)
 }
 
-// Обновить новости
-func UpdateNews(c *gin.Context) {
-	idStr := c.Param("id") // Получаем ID новости
+// Обновления новости
+func (c *NewsController) UpdateNews(ctx *gin.Context) {
+	idStr := ctx.Param("id") // Получаем ID
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "Invalid ID"})
+		ctx.JSON(400, gin.H{"error": "Invalid ID"})
 		return
 	}
 
-	var updatedNews News
-	if err := c.ShouldBindJSON(&updatedNews); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+	var updatedNews models.News // Переменная для хранения обновленной новости
+	if err := ctx.ShouldBindJSON(&updatedNews); err != nil {
+		ctx.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	if updatedNews.Title == "" || updatedNews.Author == "" || updatedNews.Content == "" { 
+		ctx.JSON(400, gin.H{"error": "Title, Author, and Content are required"})
 		return
 	}
 
-	mutex.Lock()
-	for i, news := range newsList {
-		if news.ID == id {
-			newsList[i] = updatedNews // Обновляем новость
-			mutex.Unlock()
-			c.JSON(200, updatedNews)
-			return
-		}
+	news, err := c.service.Update(id, updatedNews) // Обновляем новость
+	if err != nil {
+		ctx.JSON(404, gin.H{"error": err.Error()})
+		return
 	}
-	mutex.Unlock()
-	c.JSON(404, gin.H{"error": "News not found"})
+	ctx.JSON(200, news)
 }
 
-// Удаления новости
-func DeleteNews(c *gin.Context) {
-	idStr := c.Param("id")
+// Удаления новости.
+func (c *NewsController) DeleteNews(ctx *gin.Context) {
+	idStr := ctx.Param("id") // Получаем ID
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(400, gin.H{"error": "Invalid ID"})
+		ctx.JSON(400, gin.H{"error": "Invalid ID"})
 		return
 	}
 
-	mutex.Lock()
-	for i, news := range newsList {
-		if news.ID == id {
-			newsList = append(newsList[:i], newsList[i+1:]...) // Удаляем новость
-			mutex.Unlock()
-			c.JSON(200, gin.H{"message": "News deleted"}) // Сообщение об удалении
-			return
-		}
+	if err := c.service.Delete(id); err != nil { // Удаление новости
+		ctx.JSON(404, gin.H{"error": err.Error()})
+		return
 	}
-	mutex.Unlock()
-	c.JSON(404, gin.H{"error": "News not found"})
+	ctx.JSON(200, gin.H{"message": "News deleted"})
 }

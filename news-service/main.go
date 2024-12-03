@@ -3,6 +3,8 @@ package main
 import (
 	_ "news-service/docs"
 	"news-service/news"
+	"news-service/repository"
+	"news-service/service"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -16,18 +18,23 @@ func main() {
 	// Настройка CORS
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"http://localhost:3000"}
-	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"} // HTTP-методы
+	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept"}
-	r.Use(cors.New(config)) // Применяем настройки CORS
+	r.Use(cors.New(config))
 
 	// Настройка Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	// Инициализация репозитория и сервиса
+	newsRepo := repository.NewNewsRepository()
+	newsService := service.NewNewsService(newsRepo)
+	newsController := news.NewNewsController(newsService)
+
 	// Определение маршрутов
-	r.GET("/news", news.GetNews)           // Маршрут для списка новостей
-	r.POST("/news", news.CreateNews)       // Маршрут для создания новой новости
-	r.PUT("/news/:id", news.UpdateNews)    // Маршрут для обновления новости по ID
-	r.DELETE("/news/:id", news.DeleteNews) // Маршрут для удаления новости по ID
+	r.GET("/news", newsController.GetNews)
+	r.POST("/news", newsController.CreateNews)
+	r.PUT("/news/:id", newsController.UpdateNews)
+	r.DELETE("/news/:id", newsController.DeleteNews)
 
 	// Запуск сервера
 	r.Run(":8080")
