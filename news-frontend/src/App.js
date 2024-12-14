@@ -8,7 +8,7 @@ import './App.css'; // Импортируем CSS файл
 function App() {
   return (
     <Router>
-      <div>
+      <div className="App">
         <nav>
           <ul>
             <li><Link to="/">News List</Link></li> {/* Ссылка на новости */}
