@@ -1,0 +1,60 @@
+.news-list-container {
+  background-color: #f0f8ff; /* Светлый холодный фон */
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  margin: 20px auto;
+  width: 80%;
+}
+
+.news-id {
+  font-size: 0.8em;
+  color: #66b3ff; /* Холодный оттенок для ID */
+  margin-right: 10px;
+}
+
+.news-list-item {
+  border: 1px solid #d3d3d3;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  padding: 15px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  background-color: #e0f7fa; /* Холодный оттенок для фона */
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Легкая тень для объема */
+  cursor: pointer; /* Курсор при наведении */
+  overflow: hidden; /* Скрываем излишки текста */
+  max-height: 150px; /* Максимальная высота рамки */
+  position: relative;
+}
+
+.news-list-item.expanded {
+  max-height: none;
+}
+
+.news-list-item:hover {
+  background-color: #b2ebf2; /* Светло-голубой при наведении */
+  transform: scale(1.02);
+}
+
+.news-list-item h2 {
+  color: #0077b6; /* Синий цвет для заголовков */
+}
+
+.news-list-item p {
+  color: #444;
+  word-wrap: break-word; /* Перенос слов */
+}
+
+.news-list-item .content {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3; /* Ограничиваем количество строк */
+  line-clamp: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.news-list-item.expanded .content {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
